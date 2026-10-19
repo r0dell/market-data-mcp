@@ -2,7 +2,7 @@
 
 <!-- mcp-name: io.github.r0dell/market-data-mcp -->
 
-An MCP server that gives AI assistants and agents 33 paid market-data tools plus 5 free helper tools:
+An MCP server that gives AI assistants and agents 31 paid market-data tools plus 5 free helper tools:
 
 | Area | Tools | Price per call |
 |---|---|---|
@@ -11,7 +11,7 @@ An MCP server that gives AI assistants and agents 33 paid market-data tools plus
 | Trading time | `settlement_date`, `fx_sessions`, `dst_gaps`, `is_dst_gap`, `market_countdown` | 0.001–0.002 USDC |
 | Macro | `treasury_yield_curve`, `treasury_spread`, `ecb_fx_rate`, `ecb_convert`, `cot_positioning` | 0.001–0.002 USDC |
 | Calendars | `options_expiration_check`, `options_expiration_calendar`, `vix_expirations`, `economic_release_next`, `economic_releases`, `central_bank_next_meeting`, `central_bank_meetings`, `treasury_auctions`, `treasury_next_auction`, `is_banking_day`, `banking_holidays`, `index_rebalance_dates` | 0.001–0.002 USDC |
-| Filings & specs | `sec_filings`, `insider_transactions`, `contract_spec`, `futures_tick_value`, `futures_position_size` | 0.001–0.002 USDC |
+| Futures specs | `contract_spec`, `futures_tick_value`, `futures_position_size` | 0.001 USDC |
 | Free | `catalog_list`, `payment_status`, `list_markets`, `list_futures_products`, `list_cot_markets` | free |
 
 Exchanges: NYSE, Nasdaq, LSE, Xetra, SIX, Tokyo, Hong Kong, Shanghai, ASX, CME equity futures.

@@ -19,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # ================================================================ Katalog
 APIS = {
@@ -73,8 +73,6 @@ TOOLS = [
     ("is_banking_day", "market-calendar", "/v1/is-banking-day", 0.0014, "Banking day in TARGET2/US/CH"),
     ("banking_holidays", "market-calendar", "/v1/banking-holidays", 0.0014, "Banking holidays of a year"),
     ("index_rebalance_dates", "market-calendar", "/v1/rebalance", 0.002, "S&P/Nasdaq/Russell/DAX rebalancing"),
-    ("sec_filings", "filings-specs", "/v1/filings", 0.002, "Latest SEC filings of a US ticker"),
-    ("insider_transactions", "filings-specs", "/v1/insider", 0.002, "Parsed Form 4 insider transactions"),
     ("contract_spec", "filings-specs", "/v1/spec", 0.001, "Futures contract specification"),
     ("futures_tick_value", "filings-specs", "/v1/tick-value", 0.001, "Money value of a futures move"),
     ("futures_position_size", "filings-specs", "/v1/position-size", 0.001, "Contracts for a risk budget"),
@@ -466,21 +464,7 @@ def index_rebalance_dates(index: str = "ALL", year: Optional[int] = None) -> dic
     return _get("market-calendar", "/v1/rebalance", index=index, year=year)
 
 
-# ---------------------------------------------------------------- Filings & Specs API
-@mcp.tool()
-def sec_filings(ticker: str, form_type: Optional[str] = None, limit: int = 20) -> dict:
-    """Latest SEC EDGAR filings of a US-listed company (8-K with item titles, 10-Q, 10-K, Form 4, S-1, 13D/G ...)
-    with dates and direct links. form_type e.g. 8-K or "10-Q,10-K". Costs 0.002 USDC."""
-    return _get("filings-specs", "/v1/filings", ticker=ticker, type=form_type, limit=limit)
-
-
-@mcp.tool()
-def insider_transactions(ticker: str, limit: int = 10) -> dict:
-    """Recent Form 4 insider transactions of a US company, parsed: insider, role, purchase/sale/award, shares,
-    price, value, holdings after, plus a purchase/sale summary. Costs 0.002 USDC."""
-    return _get("filings-specs", "/v1/insider", ticker=ticker, limit=limit)
-
-
+# ---------------------------------------------------------------- Futures Specs API
 @mcp.tool()
 def contract_spec(symbol: str) -> dict:
     """Futures contract specification (CME, CBOT, NYMEX, COMEX, Cboe, Eurex): multiplier, tick size, tick value,
