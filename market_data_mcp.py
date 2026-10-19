@@ -19,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # ================================================================ Katalog
 APIS = {
@@ -80,7 +80,7 @@ class Payer:
         self.spent = 0.0
         self.calls = 0
         self._lock = threading.Lock()
-        self._http = http or requests.Session()
+        self._http = http or _clean_session(requests.Session())
         self._paid_session = None
         self.address = None
         if self.private_key:
@@ -126,7 +126,7 @@ class Payer:
 
             client.on_before_payment_creation(guard)
             self._client = client
-            self._paid_session = x402_requests(client)
+            self._paid_session = _clean_session(x402_requests(client))
         return self._paid_session
 
     # -------------------------------------------------------------- Abruf
@@ -159,6 +159,19 @@ class Payer:
                 "spent_usdc_this_session": round(self.spent, 6), "paid_calls": self.calls,
                 "max_usdc_per_call": self.max_per_call, "max_usdc_per_session": self.max_per_session,
                 "network": "Base mainnet (USDC)"}
+
+
+def _clean_session(sess):
+    """Ignore CA-bundle variables inherited from the host app (they can point to a bundle that lacks
+    public CAs) and verify against certifi; on Windows/macOS also trust the system store if available."""
+    sess.trust_env = False
+    try:
+        import truststore
+        truststore.inject_into_ssl()
+    except Exception:
+        import certifi
+        sess.verify = certifi.where()
+    return sess
 
 
 def _key_from_env() -> str:
