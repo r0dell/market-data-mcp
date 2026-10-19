@@ -19,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 # ================================================================ Katalog
 APIS = {
@@ -28,6 +28,7 @@ APIS = {
     "trading-time": "https://trading-time-api.onrender.com",
     "macro-data": "https://macro-data-api-313m.onrender.com",
     "market-calendar": "https://market-calendar-api.onrender.com",
+    "filings-specs": "https://filings-specs-api.onrender.com",
 }
 
 # Nur an diese Wallets darf der Server zahlen (Schutz gegen umgeleitete Zahlungen).
@@ -37,7 +38,7 @@ ALLOWED_PAY_TO = {
     "0x98ad309e7ea4ceec93ce61e7d89cf697c2f4fd10",  # Trading Time API
     "0x5d4201f59a0ac8bcdb6106752846a4993395ff31",  # Macro Data API
     "0xc577c27d10767abfc10d867b443577fe296e7d23",  # Market Calendar API
-    "0x6bffcc85172372ad4e9c1ffafe97980a2c778fc7",  # Filings & Specs API (geplant)
+    "0x6bffcc85172372ad4e9c1ffafe97980a2c778fc7",  # Filings & Specs API
 }
 NETWORK = "eip155:8453"  # Base mainnet
 USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
@@ -72,6 +73,11 @@ TOOLS = [
     ("is_banking_day", "market-calendar", "/v1/is-banking-day", 0.0014, "Banking day in TARGET2/US/CH"),
     ("banking_holidays", "market-calendar", "/v1/banking-holidays", 0.0014, "Banking holidays of a year"),
     ("index_rebalance_dates", "market-calendar", "/v1/rebalance", 0.002, "S&P/Nasdaq/Russell/DAX rebalancing"),
+    ("sec_filings", "filings-specs", "/v1/filings", 0.002, "Latest SEC filings of a US ticker"),
+    ("insider_transactions", "filings-specs", "/v1/insider", 0.002, "Parsed Form 4 insider transactions"),
+    ("contract_spec", "filings-specs", "/v1/spec", 0.001, "Futures contract specification"),
+    ("futures_tick_value", "filings-specs", "/v1/tick-value", 0.001, "Money value of a futures move"),
+    ("futures_position_size", "filings-specs", "/v1/position-size", 0.001, "Contracts for a risk budget"),
 ]
 
 
@@ -458,6 +464,43 @@ def index_rebalance_dates(index: str = "ALL", year: Optional[int] = None) -> dic
     effective-after-close date and first trading day with new weights. index: SP500, NDX, RUSSELL, DAX, ALL.
     Costs 0.002 USDC."""
     return _get("market-calendar", "/v1/rebalance", index=index, year=year)
+
+
+# ---------------------------------------------------------------- Filings & Specs API
+@mcp.tool()
+def sec_filings(ticker: str, form_type: Optional[str] = None, limit: int = 20) -> dict:
+    """Latest SEC EDGAR filings of a US-listed company (8-K with item titles, 10-Q, 10-K, Form 4, S-1, 13D/G ...)
+    with dates and direct links. form_type e.g. 8-K or "10-Q,10-K". Costs 0.002 USDC."""
+    return _get("filings-specs", "/v1/filings", ticker=ticker, type=form_type, limit=limit)
+
+
+@mcp.tool()
+def insider_transactions(ticker: str, limit: int = 10) -> dict:
+    """Recent Form 4 insider transactions of a US company, parsed: insider, role, purchase/sale/award, shares,
+    price, value, holdings after, plus a purchase/sale summary. Costs 0.002 USDC."""
+    return _get("filings-specs", "/v1/insider", ticker=ticker, limit=limit)
+
+
+@mcp.tool()
+def contract_spec(symbol: str) -> dict:
+    """Futures contract specification (CME, CBOT, NYMEX, COMEX, Cboe, Eurex): multiplier, tick size, tick value,
+    point value, currency, trading hours. symbol e.g. ES, MNQ, CL, GC, ZN, 6E, FDAX, FESX. Costs 0.001 USDC."""
+    return _get("filings-specs", "/v1/spec", symbol=symbol)
+
+
+@mcp.tool()
+def futures_tick_value(symbol: str, ticks: Optional[float] = None, points: Optional[float] = None) -> dict:
+    """Money value per contract of a move in ticks or points for a futures symbol. Costs 0.001 USDC."""
+    return _get("filings-specs", "/v1/tick-value", symbol=symbol, ticks=ticks, points=points)
+
+
+@mcp.tool()
+def futures_position_size(symbol: str, risk: float, stop_ticks: Optional[float] = None,
+                          stop_points: Optional[float] = None) -> dict:
+    """How many futures contracts fit a risk budget (in contract currency) for a stop distance in ticks or points.
+    Costs 0.001 USDC."""
+    return _get("filings-specs", "/v1/position-size", symbol=symbol, risk=risk, stop_ticks=stop_ticks,
+                stop_points=stop_points)
 
 
 def main():
