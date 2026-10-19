@@ -1,14 +1,14 @@
 """Market Data MCP server.
 
 Exchange hours, futures expiry, settlement dates, forex sessions, US Treasury yield curve, ECB FX rates and
-CFTC COT data as MCP tools. Paid tools cost 0.001-0.002 USDC per call and are paid automatically with x402
+CFTC COT data as MCP tools. Paid tools cost 0.01-0.03 USDC per call and are paid automatically with x402
 (USDC on Base), only to the known API wallets and within MAX_USDC_PER_CALL / MAX_USDC_PER_SESSION.
 
 Environment:
   X402_PRIVATE_KEY      key of a small, dedicated payment wallet (a few USDC only)
   X402_KEY_FILE         alternative: path to a file holding that key (plain text, or JSON with "private_key")
-  MAX_USDC_PER_CALL     highest price per call (default 0.01)
-  MAX_USDC_PER_SESSION  total budget per server start (default 0.10)
+  MAX_USDC_PER_CALL     highest price per call (default 0.05)
+  MAX_USDC_PER_SESSION  total budget per server start (default 1.00)
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 # ================================================================ Katalog
 APIS = {
@@ -45,37 +45,38 @@ USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 
 # (Tool, API, Pfad, Preis in USDC, Kurzbeschreibung)
 TOOLS = [
-    ("market_is_open", "market-hours", "/v1/is-open", 0.001, "Is an exchange open right now or at a given time"),
-    ("market_next_open_close", "market-hours", "/v1/next", 0.001, "Next open and close of an exchange"),
-    ("market_holidays", "market-hours", "/v1/holidays", 0.002, "Exchange holidays and early closes in a date range"),
-    ("futures_front_month", "futures-expiry", "/v1/front-month", 0.001, "Front and most active futures contract"),
-    ("futures_expirations", "futures-expiry", "/v1/expirations", 0.001, "Next futures expirations with roll dates"),
-    ("futures_roll_calendar", "futures-expiry", "/v1/roll-calendar", 0.002, "Quarterly expirations and roll dates of a year"),
-    ("settlement_date", "trading-time", "/v1/settlement-date", 0.001, "Settlement date of a stock trade (T+1/T+2)"),
-    ("fx_sessions", "trading-time", "/v1/fx-sessions", 0.0011, "Open forex sessions, overlaps, next opens"),
-    ("dst_gaps", "trading-time", "/v1/dst-gap", 0.0012, "Weeks when US/Europe clock differences shift"),
-    ("is_dst_gap", "trading-time", "/v1/is-dst-gap", 0.0012, "Is a time inside a daylight-saving gap"),
-    ("market_countdown", "trading-time", "/v1/countdown", 0.002, "Open/close countdown for several exchanges"),
-    ("treasury_yield_curve", "macro-data", "/v1/yield-curve", 0.001, "US Treasury par yield curve, 2s10s, shape"),
-    ("treasury_spread", "macro-data", "/v1/spread", 0.001, "Spread between two Treasury tenors"),
-    ("ecb_fx_rate", "macro-data", "/v1/fx", 0.0011, "ECB euro reference rate incl. cross rates"),
-    ("ecb_convert", "macro-data", "/v1/convert", 0.0011, "Convert an amount with ECB reference rates"),
-    ("cot_positioning", "macro-data", "/v1/cot", 0.002, "CFTC Commitments of Traders positioning"),
-    ("options_expiration_check", "market-calendar", "/v1/opex", 0.001, "Is a date an options expiration (US/VIX/Eurex)"),
-    ("options_expiration_calendar", "market-calendar", "/v1/opex-calendar", 0.001, "Monthly expirations of a year"),
-    ("vix_expirations", "market-calendar", "/v1/vix-expiry", 0.001, "Next VIX expirations"),
-    ("economic_release_next", "market-calendar", "/v1/next-release", 0.0011, "Next CPI/NFP/PPI/GDP/PCE release"),
-    ("economic_releases", "market-calendar", "/v1/releases", 0.0011, "US economic releases in a date range"),
-    ("central_bank_next_meeting", "market-calendar", "/v1/next-meeting", 0.0012, "Next Fed/ECB decision with times"),
-    ("central_bank_meetings", "market-calendar", "/v1/meetings", 0.0012, "Fed/ECB meetings of a year"),
-    ("treasury_auctions", "market-calendar", "/v1/auctions", 0.0013, "US Treasury auctions and results"),
-    ("treasury_next_auction", "market-calendar", "/v1/next-auction", 0.0013, "Next US Treasury auction"),
-    ("is_banking_day", "market-calendar", "/v1/is-banking-day", 0.0014, "Banking day in TARGET2/US/CH"),
-    ("banking_holidays", "market-calendar", "/v1/banking-holidays", 0.0014, "Banking holidays of a year"),
-    ("index_rebalance_dates", "market-calendar", "/v1/rebalance", 0.002, "S&P/Nasdaq/Russell/DAX rebalancing"),
-    ("contract_spec", "filings-specs", "/v1/spec", 0.001, "Futures contract specification"),
-    ("futures_tick_value", "filings-specs", "/v1/tick-value", 0.001, "Money value of a futures move"),
-    ("futures_position_size", "filings-specs", "/v1/position-size", 0.001, "Contracts for a risk budget"),
+    ("market_is_open", "market-hours", "/v1/is-open", 0.01, "Is an exchange open right now or at a given time"),
+    ("market_next_open_close", "market-hours", "/v1/next", 0.01, "Next open and close of an exchange"),
+    ("market_holidays", "market-hours", "/v1/holidays", 0.02, "Exchange holidays and early closes in a date range"),
+    ("futures_front_month", "futures-expiry", "/v1/front-month", 0.01, "Front and most active futures contract"),
+    ("futures_expirations", "futures-expiry", "/v1/expirations", 0.01, "Next futures expirations with roll dates"),
+    ("futures_roll_calendar", "futures-expiry", "/v1/roll-calendar", 0.02, "Quarterly expirations and roll dates of a year"),
+    ("settlement_date", "trading-time", "/v1/settlement-date", 0.01, "Settlement date of a stock trade (T+1/T+2)"),
+    ("fx_sessions", "trading-time", "/v1/fx-sessions", 0.011, "Open forex sessions, overlaps, next opens"),
+    ("dst_gaps", "trading-time", "/v1/dst-gap", 0.012, "Weeks when US/Europe clock differences shift"),
+    ("is_dst_gap", "trading-time", "/v1/is-dst-gap", 0.012, "Is a time inside a daylight-saving gap"),
+    ("market_countdown", "trading-time", "/v1/countdown", 0.02, "Open/close countdown for several exchanges"),
+    ("treasury_yield_curve", "macro-data", "/v1/yield-curve", 0.01, "US Treasury par yield curve, 2s10s, shape"),
+    ("treasury_spread", "macro-data", "/v1/spread", 0.01, "Spread between two Treasury tenors"),
+    ("ecb_fx_rate", "macro-data", "/v1/fx", 0.011, "ECB euro reference rate incl. cross rates"),
+    ("ecb_convert", "macro-data", "/v1/convert", 0.011, "Convert an amount with ECB reference rates"),
+    ("cot_positioning", "macro-data", "/v1/cot", 0.02, "CFTC Commitments of Traders positioning"),
+    ("options_expiration_check", "market-calendar", "/v1/opex", 0.01, "Is a date an options expiration (US/VIX/Eurex)"),
+    ("options_expiration_calendar", "market-calendar", "/v1/opex-calendar", 0.01, "Monthly expirations of a year"),
+    ("vix_expirations", "market-calendar", "/v1/vix-expiry", 0.01, "Next VIX expirations"),
+    ("economic_release_next", "market-calendar", "/v1/next-release", 0.011, "Next CPI/NFP/PPI/GDP/PCE release"),
+    ("economic_releases", "market-calendar", "/v1/releases", 0.011, "US economic releases in a date range"),
+    ("central_bank_next_meeting", "market-calendar", "/v1/next-meeting", 0.012, "Next Fed/ECB decision with times"),
+    ("central_bank_meetings", "market-calendar", "/v1/meetings", 0.012, "Fed/ECB meetings of a year"),
+    ("treasury_auctions", "market-calendar", "/v1/auctions", 0.013, "US Treasury auctions and results"),
+    ("treasury_next_auction", "market-calendar", "/v1/next-auction", 0.013, "Next US Treasury auction"),
+    ("is_banking_day", "market-calendar", "/v1/is-banking-day", 0.014, "Banking day in TARGET2/US/CH"),
+    ("banking_holidays", "market-calendar", "/v1/banking-holidays", 0.014, "Banking holidays of a year"),
+    ("index_rebalance_dates", "market-calendar", "/v1/rebalance", 0.02, "S&P/Nasdaq/Russell/DAX rebalancing"),
+    ("trading_briefing", "market-calendar", "/v1/briefing", 0.03, "All market-moving events of the next days in one call"),
+    ("contract_spec", "filings-specs", "/v1/spec", 0.01, "Futures contract specification"),
+    ("futures_tick_value", "filings-specs", "/v1/tick-value", 0.01, "Money value of a futures move"),
+    ("futures_position_size", "filings-specs", "/v1/position-size", 0.01, "Contracts for a risk budget"),
 ]
 
 
@@ -91,9 +92,9 @@ class Payer:
     def __init__(self, private_key: str | None = None, max_per_call: float | None = None,
                  max_per_session: float | None = None, http=None):
         self.private_key = private_key if private_key is not None else _key_from_env()
-        self.max_per_call = max_per_call if max_per_call is not None else float(os.environ.get("MAX_USDC_PER_CALL", "0.01"))
+        self.max_per_call = max_per_call if max_per_call is not None else float(os.environ.get("MAX_USDC_PER_CALL", "0.05"))
         self.max_per_session = (max_per_session if max_per_session is not None
-                                else float(os.environ.get("MAX_USDC_PER_SESSION", "0.10")))
+                                else float(os.environ.get("MAX_USDC_PER_SESSION", "1.00")))
         self.spent = 0.0
         self.calls = 0
         self._lock = threading.Lock()
@@ -219,7 +220,7 @@ mcp = FastMCP(
     "market-data",
     instructions=(
         "Trading-calendar, futures-expiry, settlement, forex-session, US Treasury yield curve, ECB FX and "
-        "CFTC COT data. Paid tools cost 0.001-0.002 USDC per call, paid automatically via x402 on Base "
+        "CFTC COT data. Paid tools cost 0.01-0.03 USDC per call, paid automatically via x402 on Base "
         "within the user's spending limits. Times are ISO 8601 with offset (e.g. 2026-11-27T15:00:00Z); "
         "dates are YYYY-MM-DD. Call list_markets / list_futures_products / list_cot_markets (free) for valid codes."),
 )
@@ -274,20 +275,20 @@ def list_cot_markets() -> dict:
 def market_is_open(market: str, at: Optional[str] = None) -> dict:
     """Is an exchange open now or at a given time? Includes holidays, early closes and lunch breaks.
     market: code like XNYS, XNAS, XETR, XSWX, XLON, CME_EQUITY. at: ISO time with offset (default now).
-    Costs 0.001 USDC."""
+    Costs 0.01 USDC."""
     return _get("market-hours", "/v1/is-open", market=market, at=at)
 
 
 @mcp.tool()
 def market_next_open_close(market: str, at: Optional[str] = None) -> dict:
-    """Next open and next close of an exchange after a given time (default now). Costs 0.001 USDC."""
+    """Next open and next close of an exchange after a given time (default now). Costs 0.01 USDC."""
     return _get("market-hours", "/v1/next", market=market, at=at)
 
 
 @mcp.tool()
 def market_holidays(market: str, start: str, end: str) -> dict:
     """Closed weekdays (holidays) and early closes of an exchange between start and end (YYYY-MM-DD).
-    Costs 0.002 USDC."""
+    Costs 0.02 USDC."""
     return _get("market-hours", "/v1/holidays", market=market, start=start, end=end)
 
 
@@ -295,19 +296,19 @@ def market_holidays(market: str, start: str, end: str) -> dict:
 @mcp.tool()
 def futures_front_month(product: str, at: Optional[str] = None) -> dict:
     """Front contract and most active contract of a futures product (ES, NQ, FDAX, ...) at a time.
-    Costs 0.001 USDC."""
+    Costs 0.01 USDC."""
     return _get("futures-expiry", "/v1/front-month", product=product, at=at)
 
 
 @mcp.tool()
 def futures_expirations(product: str, count: int = 4, at: Optional[str] = None) -> dict:
-    """Next 1-12 contract expirations with last trading time and roll date. Costs 0.001 USDC."""
+    """Next 1-12 contract expirations with last trading time and roll date. Costs 0.01 USDC."""
     return _get("futures-expiry", "/v1/expirations", product=product, count=count, at=at)
 
 
 @mcp.tool()
 def futures_roll_calendar(product: str, year: int) -> dict:
-    """All quarterly expirations and roll dates of a futures product in a year. Costs 0.002 USDC."""
+    """All quarterly expirations and roll dates of a futures product in a year. Costs 0.02 USDC."""
     return _get("futures-expiry", "/v1/roll-calendar", product=product, year=year)
 
 
@@ -315,34 +316,34 @@ def futures_roll_calendar(product: str, year: int) -> dict:
 @mcp.tool()
 def settlement_date(market: str, trade_date: str) -> dict:
     """Settlement date of a stock trade (T+1 US, T+2 elsewhere, holiday-aware). trade_date YYYY-MM-DD.
-    Costs 0.001 USDC."""
+    Costs 0.01 USDC."""
     return _get("trading-time", "/v1/settlement-date", market=market, trade_date=trade_date)
 
 
 @mcp.tool()
 def fx_sessions(at: Optional[str] = None) -> dict:
     """Which forex sessions (Sydney, Tokyo, London, New York) are open, overlaps and next opens.
-    Costs 0.0011 USDC."""
+    Costs 0.011 USDC."""
     return _get("trading-time", "/v1/fx-sessions", at=at)
 
 
 @mcp.tool()
 def dst_gaps(year: int, pair: str = "US-EU") -> dict:
     """Weeks in a year when the clock difference between the US and Europe shifts (DST gaps).
-    pair: US-EU, US-UK or US-CH. Costs 0.0012 USDC."""
+    pair: US-EU, US-UK or US-CH. Costs 0.012 USDC."""
     return _get("trading-time", "/v1/dst-gap", year=year, pair=pair)
 
 
 @mcp.tool()
 def is_dst_gap(at: Optional[str] = None, pair: str = "US-EU") -> dict:
-    """Is a time inside a daylight-saving gap between the US and Europe? Costs 0.0012 USDC."""
+    """Is a time inside a daylight-saving gap between the US and Europe? Costs 0.012 USDC."""
     return _get("trading-time", "/v1/is-dst-gap", at=at, pair=pair)
 
 
 @mcp.tool()
 def market_countdown(markets: str, at: Optional[str] = None) -> dict:
     """Time until open/close for several exchanges in one call. markets: comma list like XNYS,XETR,CME_EQUITY.
-    Costs 0.002 USDC."""
+    Costs 0.02 USDC."""
     return _get("trading-time", "/v1/countdown", markets=markets, at=at)
 
 
@@ -350,26 +351,26 @@ def market_countdown(markets: str, at: Optional[str] = None) -> dict:
 @mcp.tool()
 def treasury_yield_curve(date: Optional[str] = None) -> dict:
     """US Treasury par yield curve (1M-30Y) on a date (default latest) with 2s10s, 3m10y and curve shape.
-    Costs 0.001 USDC."""
+    Costs 0.01 USDC."""
     return _get("macro-data", "/v1/yield-curve", date=date)
 
 
 @mcp.tool()
 def treasury_spread(a: str = "2y", b: str = "10y", date: Optional[str] = None) -> dict:
-    """Spread b minus a between two Treasury tenors (1m..30y) and whether it is inverted. Costs 0.001 USDC."""
+    """Spread b minus a between two Treasury tenors (1m..30y) and whether it is inverted. Costs 0.01 USDC."""
     return _get("macro-data", "/v1/spread", a=a, b=b, date=date)
 
 
 @mcp.tool()
 def ecb_fx_rate(quote: str, base: str = "EUR", date: Optional[str] = None) -> dict:
     """ECB euro reference rate between two currencies (cross rates supported), e.g. base CHF quote USD.
-    Costs 0.0011 USDC."""
+    Costs 0.011 USDC."""
     return _get("macro-data", "/v1/fx", base=base, quote=quote, date=date)
 
 
 @mcp.tool()
 def ecb_convert(amount: float, from_currency: str, to_currency: str, date: Optional[str] = None) -> dict:
-    """Convert an amount between currencies with ECB reference rates. Costs 0.0011 USDC."""
+    """Convert an amount between currencies with ECB reference rates. Costs 0.011 USDC."""
     return _get("macro-data", "/v1/convert", amount=amount, **{"from": from_currency}, to=to_currency, date=date)
 
 
@@ -377,7 +378,7 @@ def ecb_convert(amount: float, from_currency: str, to_currency: str, date: Optio
 def cot_positioning(market: str, weeks: int = 1) -> dict:
     """CFTC Commitments of Traders: commercial, non-commercial and small-trader positions and weekly change.
     market: ES, NQ, YM, RTY, GC, SI, CL, NG, 6E, 6J, 6B, 6S, ZN, BTC. weeks: 1-260 for history.
-    Costs 0.002 USDC."""
+    Costs 0.02 USDC."""
     return _get("macro-data", "/v1/cot", market=market, weeks=weeks)
 
 
@@ -385,26 +386,26 @@ def cot_positioning(market: str, weeks: int = 1) -> dict:
 @mcp.tool()
 def options_expiration_check(date: Optional[str] = None) -> dict:
     """Is a date (YYYY-MM-DD, default today) a US monthly options expiration, triple witching, weekly expiration,
-    VIX expiration or Eurex expiration (holiday-adjusted)? Also returns the next ones. Costs 0.001 USDC."""
+    VIX expiration or Eurex expiration (holiday-adjusted)? Also returns the next ones. Costs 0.01 USDC."""
     return _get("market-calendar", "/v1/opex", date=date)
 
 
 @mcp.tool()
 def options_expiration_calendar(year: int, venue: str = "all") -> dict:
-    """All monthly options expirations of a year. venue: all, us, vix or eurex. Costs 0.001 USDC."""
+    """All monthly options expirations of a year. venue: all, us, vix or eurex. Costs 0.01 USDC."""
     return _get("market-calendar", "/v1/opex-calendar", year=year, venue=venue)
 
 
 @mcp.tool()
 def vix_expirations(count: int = 6, date: Optional[str] = None) -> dict:
-    """Next 1-24 VIX futures/options expiration dates (Wednesday rule, holiday-adjusted). Costs 0.001 USDC."""
+    """Next 1-24 VIX futures/options expiration dates (Wednesday rule, holiday-adjusted). Costs 0.01 USDC."""
     return _get("market-calendar", "/v1/vix-expiry", count=count, date=date)
 
 
 @mcp.tool()
 def economic_release_next(indicator: str, date: Optional[str] = None) -> dict:
     """Next scheduled US release with time (ET and UTC) and reference period. indicator: CPI, NFP, PPI, GDP, PCE
-    (comma list allowed). Costs 0.0011 USDC."""
+    (comma list allowed). Costs 0.011 USDC."""
     return _get("market-calendar", "/v1/next-release", indicator=indicator, date=date)
 
 
@@ -412,20 +413,20 @@ def economic_release_next(indicator: str, date: Optional[str] = None) -> dict:
 def economic_releases(from_date: Optional[str] = None, to_date: Optional[str] = None,
                       indicator: Optional[str] = None) -> dict:
     """US economic releases (CPI, NFP, PPI, GDP, PCE) between two dates (YYYY-MM-DD, max 400 days).
-    Costs 0.0011 USDC."""
+    Costs 0.011 USDC."""
     return _get("market-calendar", "/v1/releases", **{"from": from_date}, to=to_date, indicator=indicator)
 
 
 @mcp.tool()
 def central_bank_next_meeting(bank: str = "all", date: Optional[str] = None) -> dict:
     """Next Fed (FOMC) and/or ECB monetary policy decision with statement and press conference times.
-    bank: fed, ecb or all. Costs 0.0012 USDC."""
+    bank: fed, ecb or all. Costs 0.012 USDC."""
     return _get("market-calendar", "/v1/next-meeting", bank=bank, date=date)
 
 
 @mcp.tool()
 def central_bank_meetings(year: int, bank: str = "all") -> dict:
-    """All Fed (FOMC) and ECB monetary policy meetings of a year with times. Costs 0.0012 USDC."""
+    """All Fed (FOMC) and ECB monetary policy meetings of a year with times. Costs 0.012 USDC."""
     return _get("market-calendar", "/v1/meetings", bank=bank, year=year)
 
 
@@ -433,26 +434,26 @@ def central_bank_meetings(year: int, bank: str = "all") -> dict:
 def treasury_auctions(from_date: Optional[str] = None, to_date: Optional[str] = None,
                       term: Optional[str] = None) -> dict:
     """US Treasury auctions (bills, notes, bonds) between two dates (max 92 days): upcoming announced auctions
-    and results of past ones. term e.g. 10-Year, 13-Week. Costs 0.0013 USDC."""
+    and results of past ones. term e.g. 10-Year, 13-Week. Costs 0.013 USDC."""
     return _get("market-calendar", "/v1/auctions", **{"from": from_date}, to=to_date, term=term)
 
 
 @mcp.tool()
 def treasury_next_auction(term: Optional[str] = None) -> dict:
-    """Next announced US Treasury auction, optionally for a term such as 2-Year or 13-Week. Costs 0.0013 USDC."""
+    """Next announced US Treasury auction, optionally for a term such as 2-Year or 13-Week. Costs 0.013 USDC."""
     return _get("market-calendar", "/v1/next-auction", term=term)
 
 
 @mcp.tool()
 def is_banking_day(zone: str, date: Optional[str] = None) -> dict:
     """Is a date a banking/settlement day? zone: TARGET2 (euro payments), US (Fedwire) or CH (Switzerland/SIX).
-    Returns the reason and the next banking day. Costs 0.0014 USDC."""
+    Returns the reason and the next banking day. Costs 0.014 USDC."""
     return _get("market-calendar", "/v1/is-banking-day", zone=zone, date=date)
 
 
 @mcp.tool()
 def banking_holidays(zone: str, year: Optional[int] = None) -> dict:
-    """Banking/settlement holidays of a year for TARGET2, US (Fedwire) or CH. Costs 0.0014 USDC."""
+    """Banking/settlement holidays of a year for TARGET2, US (Fedwire) or CH. Costs 0.014 USDC."""
     return _get("market-calendar", "/v1/banking-holidays", zone=zone, year=year)
 
 
@@ -460,21 +461,30 @@ def banking_holidays(zone: str, year: Optional[int] = None) -> dict:
 def index_rebalance_dates(index: str = "ALL", year: Optional[int] = None) -> dict:
     """Index rebalancing/reconstitution dates (S&P 500, Nasdaq-100, Russell semi-annual, DAX) for a year:
     effective-after-close date and first trading day with new weights. index: SP500, NDX, RUSSELL, DAX, ALL.
-    Costs 0.002 USDC."""
+    Costs 0.02 USDC."""
     return _get("market-calendar", "/v1/rebalance", index=index, year=year)
 
 
 # ---------------------------------------------------------------- Futures Specs API
 @mcp.tool()
+def trading_briefing(date: Optional[str] = None, days: int = 7) -> dict:
+    """Trading briefing in one call: every scheduled market-moving event for the next 1-31 days (default 7), sorted
+    by date with UTC times and importance - US CPI/NFP/PPI/GDP/PCE releases, Fed and ECB rate decisions, options
+    expirations (US monthly, triple witching, VIX, Eurex), index rebalancing, US Treasury auctions, banking holidays
+    (US, TARGET2, CH). Best first call to plan a trading day or week. Costs 0.03 USDC."""
+    return _get("market-calendar", "/v1/briefing", date=date, days=days)
+
+
+@mcp.tool()
 def contract_spec(symbol: str) -> dict:
     """Futures contract specification (CME, CBOT, NYMEX, COMEX, Cboe, Eurex): multiplier, tick size, tick value,
-    point value, currency, trading hours. symbol e.g. ES, MNQ, CL, GC, ZN, 6E, FDAX, FESX. Costs 0.001 USDC."""
+    point value, currency, trading hours. symbol e.g. ES, MNQ, CL, GC, ZN, 6E, FDAX, FESX. Costs 0.01 USDC."""
     return _get("filings-specs", "/v1/spec", symbol=symbol)
 
 
 @mcp.tool()
 def futures_tick_value(symbol: str, ticks: Optional[float] = None, points: Optional[float] = None) -> dict:
-    """Money value per contract of a move in ticks or points for a futures symbol. Costs 0.001 USDC."""
+    """Money value per contract of a move in ticks or points for a futures symbol. Costs 0.01 USDC."""
     return _get("filings-specs", "/v1/tick-value", symbol=symbol, ticks=ticks, points=points)
 
 
@@ -482,7 +492,7 @@ def futures_tick_value(symbol: str, ticks: Optional[float] = None, points: Optio
 def futures_position_size(symbol: str, risk: float, stop_ticks: Optional[float] = None,
                           stop_points: Optional[float] = None) -> dict:
     """How many futures contracts fit a risk budget (in contract currency) for a stop distance in ticks or points.
-    Costs 0.001 USDC."""
+    Costs 0.01 USDC."""
     return _get("filings-specs", "/v1/position-size", symbol=symbol, risk=risk, stop_ticks=stop_ticks,
                 stop_points=stop_points)
 

@@ -122,3 +122,11 @@ def test_key_file_json_and_plain(tmp_path, monkeypatch):
     g.write_text(acct.key.hex() + "\n")
     monkeypatch.setenv("X402_KEY_FILE", str(g))
     assert Payer().address == acct.address
+
+
+def test_default_limits_allow_briefing(monkeypatch):
+    monkeypatch.delenv("MAX_USDC_PER_CALL", raising=False)
+    monkeypatch.delenv("MAX_USDC_PER_SESSION", raising=False)
+    assert Payer(private_key="").check_requirement(req(amount=30_000)) == 0.03
+    with pytest.raises(SpendLimitError, match="MAX_USDC_PER_CALL"):
+        Payer(private_key="").check_requirement(req(amount=60_000))

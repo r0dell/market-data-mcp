@@ -2,16 +2,17 @@
 
 <!-- mcp-name: io.github.r0dell/market-data-mcp -->
 
-An MCP server that gives AI assistants and agents 31 paid market-data tools plus 5 free helper tools:
+An MCP server that gives AI assistants and agents 32 paid market-data tools plus 5 free helper tools:
 
 | Area | Tools | Price per call |
 |---|---|---|
-| Exchange hours | `market_is_open`, `market_next_open_close`, `market_holidays` | 0.001–0.002 USDC |
-| Futures | `futures_front_month`, `futures_expirations`, `futures_roll_calendar` | 0.001–0.002 USDC |
-| Trading time | `settlement_date`, `fx_sessions`, `dst_gaps`, `is_dst_gap`, `market_countdown` | 0.001–0.002 USDC |
-| Macro | `treasury_yield_curve`, `treasury_spread`, `ecb_fx_rate`, `ecb_convert`, `cot_positioning` | 0.001–0.002 USDC |
-| Calendars | `options_expiration_check`, `options_expiration_calendar`, `vix_expirations`, `economic_release_next`, `economic_releases`, `central_bank_next_meeting`, `central_bank_meetings`, `treasury_auctions`, `treasury_next_auction`, `is_banking_day`, `banking_holidays`, `index_rebalance_dates` | 0.001–0.002 USDC |
-| Futures specs | `contract_spec`, `futures_tick_value`, `futures_position_size` | 0.001 USDC |
+| Exchange hours | `market_is_open`, `market_next_open_close`, `market_holidays` | 0.01–0.02 USDC |
+| Futures | `futures_front_month`, `futures_expirations`, `futures_roll_calendar` | 0.01–0.02 USDC |
+| Trading time | `settlement_date`, `fx_sessions`, `dst_gaps`, `is_dst_gap`, `market_countdown` | 0.01–0.02 USDC |
+| Macro | `treasury_yield_curve`, `treasury_spread`, `ecb_fx_rate`, `ecb_convert`, `cot_positioning` | 0.01–0.02 USDC |
+| Calendars | `options_expiration_check`, `options_expiration_calendar`, `vix_expirations`, `economic_release_next`, `economic_releases`, `central_bank_next_meeting`, `central_bank_meetings`, `treasury_auctions`, `treasury_next_auction`, `is_banking_day`, `banking_holidays`, `index_rebalance_dates` | 0.01–0.02 USDC |
+| Briefing | `trading_briefing` – all market-moving events of the next days in one call | 0.03 USDC |
+| Futures specs | `contract_spec`, `futures_tick_value`, `futures_position_size` | 0.01 USDC |
 | Free | `catalog_list`, `payment_status`, `list_markets`, `list_futures_products`, `list_cot_markets` | free |
 
 Exchanges: NYSE, Nasdaq, LSE, Xetra, SIX, Tokyo, Hong Kong, Shanghai, ASX, CME equity futures.
@@ -26,7 +27,7 @@ USDC on Base, using a wallet key you provide, and **only**:
 
 - to the known wallets of these APIs (any other payee is refused),
 - in USDC on Base mainnet,
-- up to `MAX_USDC_PER_CALL` per call (default 0.01) and `MAX_USDC_PER_SESSION` per server start (default 0.10).
+- up to `MAX_USDC_PER_CALL` per call (default 0.05) and `MAX_USDC_PER_SESSION` per server start (default 1.00).
 
 Without a key the free tools work and paid tools explain how to enable payment.
 
@@ -46,7 +47,7 @@ Requires [uv](https://docs.astral.sh/uv/). Add this to your MCP client config
       "args": ["--from", "x402-market-data-mcp", "market-data-mcp"],
       "env": {
         "X402_KEY_FILE": "C:\\path\\to\\wallet.json",
-        "MAX_USDC_PER_SESSION": "0.10"
+        "MAX_USDC_PER_SESSION": "1.00"
       }
     }
   }
