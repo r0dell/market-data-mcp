@@ -108,3 +108,17 @@ def test_guard_hook_inside_real_x402_client():
     assert ok.accepted.pay_to.lower() == MAKRO.lower() and p._pending == 0.001
     with pytest.raises(Exception, match="not a known"):
         c.create_payment_payload(pr("0x000000000000000000000000000000000000dEaD"))
+
+
+def test_key_file_json_and_plain(tmp_path, monkeypatch):
+    from eth_account import Account
+    acct = Account.create()
+    f = tmp_path / "w.json"
+    f.write_text('{"address": "%s", "private_key": "%s"}' % (acct.address, acct.key.hex()))
+    monkeypatch.delenv("X402_PRIVATE_KEY", raising=False)
+    monkeypatch.setenv("X402_KEY_FILE", str(f))
+    assert Payer().address == acct.address
+    g = tmp_path / "k.txt"
+    g.write_text(acct.key.hex() + "\n")
+    monkeypatch.setenv("X402_KEY_FILE", str(g))
+    assert Payer().address == acct.address

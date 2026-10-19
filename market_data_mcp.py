@@ -6,6 +6,7 @@ CFTC COT data as MCP tools. Paid tools cost 0.001-0.002 USDC per call and are pa
 
 Environment:
   X402_PRIVATE_KEY      key of a small, dedicated payment wallet (a few USDC only)
+  X402_KEY_FILE         alternative: path to a file holding that key (plain text, or JSON with "private_key")
   MAX_USDC_PER_CALL     highest price per call (default 0.01)
   MAX_USDC_PER_SESSION  total budget per server start (default 0.10)
 """
@@ -18,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # ================================================================ Katalog
 APIS = {
@@ -72,7 +73,7 @@ class SpendLimitError(RuntimeError):
 class Payer:
     def __init__(self, private_key: str | None = None, max_per_call: float | None = None,
                  max_per_session: float | None = None, http=None):
-        self.private_key = private_key if private_key is not None else os.environ.get("X402_PRIVATE_KEY", "").strip()
+        self.private_key = private_key if private_key is not None else _key_from_env()
         self.max_per_call = max_per_call if max_per_call is not None else float(os.environ.get("MAX_USDC_PER_CALL", "0.01"))
         self.max_per_session = (max_per_session if max_per_session is not None
                                 else float(os.environ.get("MAX_USDC_PER_SESSION", "0.10")))
@@ -138,7 +139,7 @@ class Payer:
             if not self.private_key:
                 return {"error": "payment_not_configured",
                         "message": ("This tool costs a fraction of a cent in USDC on Base. Set X402_PRIVATE_KEY "
-                                    "to the key of a small, dedicated wallet to enable automatic payment.")}
+                                    "(or X402_KEY_FILE) for a small, dedicated wallet to enable automatic payment.")}
             self._pending = 0.0
             try:
                 r = self._session().get(url, params=params, headers=UA, timeout=120)
@@ -158,6 +159,19 @@ class Payer:
                 "spent_usdc_this_session": round(self.spent, 6), "paid_calls": self.calls,
                 "max_usdc_per_call": self.max_per_call, "max_usdc_per_session": self.max_per_session,
                 "network": "Base mainnet (USDC)"}
+
+
+def _key_from_env() -> str:
+    key = os.environ.get("X402_PRIVATE_KEY", "").strip()
+    path = os.environ.get("X402_KEY_FILE", "").strip()
+    if key or not path:
+        return key
+    import json
+    with open(os.path.expanduser(path), encoding="utf-8") as f:
+        text = f.read().strip()
+    if text.startswith("{"):
+        text = str(json.loads(text).get("private_key", "")).strip()
+    return text
 
 
 def _result(r) -> dict:

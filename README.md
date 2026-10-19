@@ -41,13 +41,17 @@ Requires [uv](https://docs.astral.sh/uv/). Add this to your MCP client config
       "command": "uvx",
       "args": ["--from", "git+https://github.com/r0dell/market-data-mcp", "market-data-mcp"],
       "env": {
-        "X402_PRIVATE_KEY": "0x... key of a small dedicated wallet ...",
+        "X402_KEY_FILE": "C:\\path\\to\\wallet.json",
         "MAX_USDC_PER_SESSION": "0.10"
       }
     }
   }
 }
 ```
+
+`X402_KEY_FILE` points to a file with the key (plain text or JSON with `private_key`);
+alternatively set `X402_PRIVATE_KEY` directly. Without uv: `pip install https://github.com/r0dell/market-data-mcp/archive/refs/heads/main.zip`
+and use `"command": "python", "args": ["-m", "market_data_mcp"]`.
 
 Then ask for example: *"Is the NYSE open on 27 November 2026 at 18:00 UTC?"*,
 *"What is the ES roll date in December?"* or *"Show the current US yield curve and the 2s10s spread."*
