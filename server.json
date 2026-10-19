@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.r0dell/market-data-mcp",
+  "title": "Market Data (x402)",
+  "description": "Paid-per-call market data for agents: trading calendars, futures, macro, contract specs (x402)",
+  "repository": {
+    "url": "https://github.com/r0dell/market-data-mcp",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "x402-market-data-mcp",
+      "version": "0.2.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "X402_KEY_FILE",
+          "description": "Path to a file with the private key of a small, dedicated payment wallet (plain text or JSON with private_key). Without it only free tools work.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "X402_PRIVATE_KEY",
+          "description": "Alternative to X402_KEY_FILE: private key of a small, dedicated payment wallet.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MAX_USDC_PER_CALL",
+          "description": "Highest price per call in USDC",
+          "default": "0.01"
+        },
+        {
+          "name": "MAX_USDC_PER_SESSION",
+          "description": "Total budget per server start in USDC",
+          "default": "0.10"
+        }
+      ]
+    }
+  ]
+}
