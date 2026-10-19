@@ -1,6 +1,6 @@
 # Market Data MCP
 
-An MCP server that gives AI assistants and agents 16 paid market-data tools plus 5 free helper tools:
+An MCP server that gives AI assistants and agents 28 paid market-data tools plus 5 free helper tools:
 
 | Area | Tools | Price per call |
 |---|---|---|
@@ -8,6 +8,7 @@ An MCP server that gives AI assistants and agents 16 paid market-data tools plus
 | Futures | `futures_front_month`, `futures_expirations`, `futures_roll_calendar` | 0.001–0.002 USDC |
 | Trading time | `settlement_date`, `fx_sessions`, `dst_gaps`, `is_dst_gap`, `market_countdown` | 0.001–0.002 USDC |
 | Macro | `treasury_yield_curve`, `treasury_spread`, `ecb_fx_rate`, `ecb_convert`, `cot_positioning` | 0.001–0.002 USDC |
+| Calendars | `options_expiration_check`, `options_expiration_calendar`, `vix_expirations`, `economic_release_next`, `economic_releases`, `central_bank_next_meeting`, `central_bank_meetings`, `treasury_auctions`, `treasury_next_auction`, `is_banking_day`, `banking_holidays`, `index_rebalance_dates` | 0.001–0.002 USDC |
 | Free | `catalog_list`, `payment_status`, `list_markets`, `list_futures_products`, `list_cot_markets` | free |
 
 Exchanges: NYSE, Nasdaq, LSE, Xetra, SIX, Tokyo, Hong Kong, Shanghai, ASX, CME equity futures.
@@ -64,6 +65,7 @@ The same data is available as x402 HTTP APIs, listed in the Coinbase x402 Bazaar
 - https://futures-expiry-api.onrender.com
 - https://trading-time-api.onrender.com
 - https://macro-data-api-313m.onrender.com
+- https://market-calendar-api.onrender.com
 
 ## Disclaimer
 

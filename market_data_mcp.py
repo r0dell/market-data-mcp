@@ -19,7 +19,7 @@ from typing import Optional
 import requests
 from mcp.server.fastmcp import FastMCP
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 # ================================================================ Katalog
 APIS = {
@@ -27,6 +27,7 @@ APIS = {
     "futures-expiry": "https://futures-expiry-api.onrender.com",
     "trading-time": "https://trading-time-api.onrender.com",
     "macro-data": "https://macro-data-api-313m.onrender.com",
+    "market-calendar": "https://market-calendar-api.onrender.com",
 }
 
 # Nur an diese Wallets darf der Server zahlen (Schutz gegen umgeleitete Zahlungen).
@@ -35,7 +36,7 @@ ALLOWED_PAY_TO = {
     "0xcb3ae5bf8b1b4b3fe9d987a9a733830095a2927b",  # Futures Expiry API
     "0x98ad309e7ea4ceec93ce61e7d89cf697c2f4fd10",  # Trading Time API
     "0x5d4201f59a0ac8bcdb6106752846a4993395ff31",  # Macro Data API
-    "0xc577c27d10767abfc10d867b443577fe296e7d23",  # Market Calendar API (geplant)
+    "0xc577c27d10767abfc10d867b443577fe296e7d23",  # Market Calendar API
     "0x6bffcc85172372ad4e9c1ffafe97980a2c778fc7",  # Filings & Specs API (geplant)
 }
 NETWORK = "eip155:8453"  # Base mainnet
@@ -59,6 +60,18 @@ TOOLS = [
     ("ecb_fx_rate", "macro-data", "/v1/fx", 0.0011, "ECB euro reference rate incl. cross rates"),
     ("ecb_convert", "macro-data", "/v1/convert", 0.0011, "Convert an amount with ECB reference rates"),
     ("cot_positioning", "macro-data", "/v1/cot", 0.002, "CFTC Commitments of Traders positioning"),
+    ("options_expiration_check", "market-calendar", "/v1/opex", 0.001, "Is a date an options expiration (US/VIX/Eurex)"),
+    ("options_expiration_calendar", "market-calendar", "/v1/opex-calendar", 0.001, "Monthly expirations of a year"),
+    ("vix_expirations", "market-calendar", "/v1/vix-expiry", 0.001, "Next VIX expirations"),
+    ("economic_release_next", "market-calendar", "/v1/next-release", 0.0011, "Next CPI/NFP/PPI/GDP/PCE release"),
+    ("economic_releases", "market-calendar", "/v1/releases", 0.0011, "US economic releases in a date range"),
+    ("central_bank_next_meeting", "market-calendar", "/v1/next-meeting", 0.0012, "Next Fed/ECB decision with times"),
+    ("central_bank_meetings", "market-calendar", "/v1/meetings", 0.0012, "Fed/ECB meetings of a year"),
+    ("treasury_auctions", "market-calendar", "/v1/auctions", 0.0013, "US Treasury auctions and results"),
+    ("treasury_next_auction", "market-calendar", "/v1/next-auction", 0.0013, "Next US Treasury auction"),
+    ("is_banking_day", "market-calendar", "/v1/is-banking-day", 0.0014, "Banking day in TARGET2/US/CH"),
+    ("banking_holidays", "market-calendar", "/v1/banking-holidays", 0.0014, "Banking holidays of a year"),
+    ("index_rebalance_dates", "market-calendar", "/v1/rebalance", 0.002, "S&P/Nasdaq/Russell/DAX rebalancing"),
 ]
 
 
@@ -362,6 +375,89 @@ def cot_positioning(market: str, weeks: int = 1) -> dict:
     market: ES, NQ, YM, RTY, GC, SI, CL, NG, 6E, 6J, 6B, 6S, ZN, BTC. weeks: 1-260 for history.
     Costs 0.002 USDC."""
     return _get("macro-data", "/v1/cot", market=market, weeks=weeks)
+
+
+# ---------------------------------------------------------------- Market Calendar API
+@mcp.tool()
+def options_expiration_check(date: Optional[str] = None) -> dict:
+    """Is a date (YYYY-MM-DD, default today) a US monthly options expiration, triple witching, weekly expiration,
+    VIX expiration or Eurex expiration (holiday-adjusted)? Also returns the next ones. Costs 0.001 USDC."""
+    return _get("market-calendar", "/v1/opex", date=date)
+
+
+@mcp.tool()
+def options_expiration_calendar(year: int, venue: str = "all") -> dict:
+    """All monthly options expirations of a year. venue: all, us, vix or eurex. Costs 0.001 USDC."""
+    return _get("market-calendar", "/v1/opex-calendar", year=year, venue=venue)
+
+
+@mcp.tool()
+def vix_expirations(count: int = 6, date: Optional[str] = None) -> dict:
+    """Next 1-24 VIX futures/options expiration dates (Wednesday rule, holiday-adjusted). Costs 0.001 USDC."""
+    return _get("market-calendar", "/v1/vix-expiry", count=count, date=date)
+
+
+@mcp.tool()
+def economic_release_next(indicator: str, date: Optional[str] = None) -> dict:
+    """Next scheduled US release with time (ET and UTC) and reference period. indicator: CPI, NFP, PPI, GDP, PCE
+    (comma list allowed). Costs 0.0011 USDC."""
+    return _get("market-calendar", "/v1/next-release", indicator=indicator, date=date)
+
+
+@mcp.tool()
+def economic_releases(from_date: Optional[str] = None, to_date: Optional[str] = None,
+                      indicator: Optional[str] = None) -> dict:
+    """US economic releases (CPI, NFP, PPI, GDP, PCE) between two dates (YYYY-MM-DD, max 400 days).
+    Costs 0.0011 USDC."""
+    return _get("market-calendar", "/v1/releases", **{"from": from_date}, to=to_date, indicator=indicator)
+
+
+@mcp.tool()
+def central_bank_next_meeting(bank: str = "all", date: Optional[str] = None) -> dict:
+    """Next Fed (FOMC) and/or ECB monetary policy decision with statement and press conference times.
+    bank: fed, ecb or all. Costs 0.0012 USDC."""
+    return _get("market-calendar", "/v1/next-meeting", bank=bank, date=date)
+
+
+@mcp.tool()
+def central_bank_meetings(year: int, bank: str = "all") -> dict:
+    """All Fed (FOMC) and ECB monetary policy meetings of a year with times. Costs 0.0012 USDC."""
+    return _get("market-calendar", "/v1/meetings", bank=bank, year=year)
+
+
+@mcp.tool()
+def treasury_auctions(from_date: Optional[str] = None, to_date: Optional[str] = None,
+                      term: Optional[str] = None) -> dict:
+    """US Treasury auctions (bills, notes, bonds) between two dates (max 92 days): upcoming announced auctions
+    and results of past ones. term e.g. 10-Year, 13-Week. Costs 0.0013 USDC."""
+    return _get("market-calendar", "/v1/auctions", **{"from": from_date}, to=to_date, term=term)
+
+
+@mcp.tool()
+def treasury_next_auction(term: Optional[str] = None) -> dict:
+    """Next announced US Treasury auction, optionally for a term such as 2-Year or 13-Week. Costs 0.0013 USDC."""
+    return _get("market-calendar", "/v1/next-auction", term=term)
+
+
+@mcp.tool()
+def is_banking_day(zone: str, date: Optional[str] = None) -> dict:
+    """Is a date a banking/settlement day? zone: TARGET2 (euro payments), US (Fedwire) or CH (Switzerland/SIX).
+    Returns the reason and the next banking day. Costs 0.0014 USDC."""
+    return _get("market-calendar", "/v1/is-banking-day", zone=zone, date=date)
+
+
+@mcp.tool()
+def banking_holidays(zone: str, year: Optional[int] = None) -> dict:
+    """Banking/settlement holidays of a year for TARGET2, US (Fedwire) or CH. Costs 0.0014 USDC."""
+    return _get("market-calendar", "/v1/banking-holidays", zone=zone, year=year)
+
+
+@mcp.tool()
+def index_rebalance_dates(index: str = "ALL", year: Optional[int] = None) -> dict:
+    """Index rebalancing/reconstitution dates (S&P 500, Nasdaq-100, Russell semi-annual, DAX) for a year:
+    effective-after-close date and first trading day with new weights. index: SP500, NDX, RUSSELL, DAX, ALL.
+    Costs 0.002 USDC."""
+    return _get("market-calendar", "/v1/rebalance", index=index, year=year)
 
 
 def main():
