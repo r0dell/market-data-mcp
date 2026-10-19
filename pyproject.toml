@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "market-data-mcp"
+version = "0.1.0"
+description = "MCP server: exchange hours, futures expiry, settlement dates, forex sessions, US Treasury yield curve, ECB FX rates and CFTC COT data, paid per call with x402 (USDC on Base)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["mcp", "x402", "trading", "market-hours", "futures", "treasury", "ecb", "cot", "usdc", "base"]
+dependencies = [
+  "mcp>=1.10,<2",
+  "x402[evm,clients]==2.25.0",
+  "requests>=2.31",
+  "eth-account>=0.13",
+]
+
+[project.scripts]
+market-data-mcp = "market_data_mcp:main"
+
+[tool.setuptools]
+py-modules = ["market_data_mcp"]
